@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/yeric17/thullo/pkg/config"
+	"github.com/yeric17/thullo/pkg/handlers"
 )
 
 func main() {
@@ -17,10 +18,13 @@ func main() {
 	}
 
 	router := gin.New()
-
+	router.SetTrustedProxies([]string{"192.168.1.2"})
 	router.GET("/", func(ctx *gin.Context) {
 		ctx.String(http.StatusOK, "Bienvenido")
 	})
+	router.Static("/images/users", "./public/images/users")
+
+	router.POST("/register/email", handlers.RegisterByEmail)
 
 	router.Run(":" + port)
 }

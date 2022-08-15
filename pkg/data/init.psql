@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS Users (
     user_password text NOT NULL,
     user_status smallint NOT NULL,
     user_avatar text NOT NULL,
+    user_phone character varying(45),
     user_created_at timestamp with time zone NOT NULL DEFAULT now(),
     user_updated_at timestamp with time zone NOT NULL DEFAULT now(),
     PRIMARY KEY (user_id),

@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	PORT, MODE, DB_USER, DB_PASS, DB_HOST, DB_PORT, DB_NAME, DB_DRIVER, CONNECTION_STRING string
+	PORT, HOST, MODE, DB_USER, DB_PASS, DB_HOST, DB_PORT, DB_NAME, DB_DRIVER, CONNECTION_STRING string
 )
 
 func init() {
@@ -21,6 +21,7 @@ func init() {
 	}
 	PORT = os.Getenv("PORT")
 	MODE = os.Getenv("MODE")
+	HOST = os.Getenv("HOST")
 	DB_USER = os.Getenv("DB_USER")
 	DB_PASS = os.Getenv("DB_PASS")
 	DB_HOST = os.Getenv("DB_HOST")
