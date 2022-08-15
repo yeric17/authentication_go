@@ -1,0 +1,42 @@
+BEGIN;
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";	
+
+CREATE TABLE IF NOT EXISTS Users (
+    user_id character varying(38) NOT NULL DEFAULT uuid_generate_v4(),
+    user_unique_name character varying(45) NOT NULL UNIQUE,
+    user_name character varying(45) NOT NULL,
+    user_email character varying(200) NOT NULL UNIQUE,
+    user_password text NOT NULL,
+    user_status smallint NOT NULL,
+    user_avatar text NOT NULL,
+    user_created_at timestamp with time zone NOT NULL DEFAULT now(),
+    user_updated_at timestamp with time zone NOT NULL DEFAULT now(),
+    PRIMARY KEY (user_id),
+    CONSTRAINT user_status_check CHECK (user_status IN (0, 1, 2)) --inactive=0; active=1; waiting_for_confirmation=2
+)
+WITH (
+    OIDS = FALSE
+);
+
+CREATE TABLE IF NOT EXISTS Refresh_Tokens (
+    r_token_id character varying(38) NOT NULL DEFAULT uuid_generate_v4(),
+    r_token_value character varying(22) NOT NULL UNIQUE,
+    r_token_user_id character varying(38) NOT NULL,
+    r_token_status smallint NOT NULL,
+    r_token_parent character varying(22),
+    r_token_created_at timestamp with time zone NOT NULL DEFAULT now(),
+    r_token_updated_at timestamp with time zone NOT NULL DEFAULT now(),
+    PRIMARY KEY (r_token_id),
+    CONSTRAINT r_token_status_check CHECK (r_token_status IN (0, 1)) --inactive=0; active=1;
+)
+WITH (
+    OIDS = FALSE
+);
+
+ALTER TABLE IF EXISTS Refresh_Tokens
+    ADD FOREIGN KEY (r_token_user_id)
+    REFERENCES Users (user_id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE SET NULL;
+END;
