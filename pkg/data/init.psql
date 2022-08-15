@@ -11,10 +11,12 @@ CREATE TABLE IF NOT EXISTS Users (
     user_status smallint NOT NULL,
     user_avatar text NOT NULL,
     user_phone character varying(45),
+    user_auth_provider character varying(10),
     user_created_at timestamp with time zone NOT NULL DEFAULT now(),
     user_updated_at timestamp with time zone NOT NULL DEFAULT now(),
     PRIMARY KEY (user_id),
-    CONSTRAINT user_status_check CHECK (user_status IN (0, 1, 2)) --inactive=0; active=1; waiting_for_confirmation=2
+    CONSTRAINT user_status_check CHECK (user_status IN (0, 1, 2)), --inactive=0; active=1; waiting_for_confirmation=2
+    CONSTRAINT user_auth_provider_check CHECK (user_auth_provider IN ('google','github','email'))
 )
 WITH (
     OIDS = FALSE

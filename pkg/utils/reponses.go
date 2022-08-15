@@ -6,6 +6,6 @@ type ErrorResponse struct {
 }
 
 type DefaultResponse struct {
-	Data    interface{} `json:"data"`
+	Data    interface{} `json:"data,omitempty"`
 	Message string      `json:"message,omitempty"`
 }

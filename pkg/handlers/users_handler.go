@@ -25,7 +25,7 @@ func RegisterByEmail(ctx *gin.Context) {
 		return
 	}
 
-	if err := user.Create(); err != nil {
+	if err := user.Create("email"); err != nil {
 		ctx.JSON(http.StatusBadRequest, utils.ErrorResponse{
 			ErrorCode: http.StatusBadRequest,
 			Message:   fmt.Sprintf("Bad Request Create User: %s", err),
@@ -62,7 +62,7 @@ func LoginByEmail(ctx *gin.Context) {
 
 	prevPass := user.Password
 
-	if err := user.GetByEmail(); err != nil {
+	if err := user.GetByEmail(true); err != nil {
 		ctx.JSON(http.StatusBadRequest, utils.ErrorResponse{
 			ErrorCode: http.StatusBadRequest,
 			Message:   fmt.Sprintf("Bad Request Get User: %s", err),
@@ -79,6 +79,8 @@ func LoginByEmail(ctx *gin.Context) {
 		fmt.Println(err)
 		return
 	}
+
+	user.Password = ""
 
 	if user.Status == int(models.UserStatusWaitingConfirmation) {
 		ctx.JSON(http.StatusBadRequest, utils.ErrorResponse{
@@ -128,24 +130,49 @@ func LoginByEmail(ctx *gin.Context) {
 
 }
 
-func AuthByRefreshToken(ctx *gin.Context) {
-	user := &models.User{}
+//AuthByToken: used into app when user already login
+func AuthByToken(ctx *gin.Context) {
 
-	if err := ctx.BindJSON(user); err != nil {
+	token := ctx.Request.Header.Get("Authorization")
+
+	if token == "" {
 		ctx.JSON(http.StatusBadRequest, utils.ErrorResponse{
 			ErrorCode: http.StatusBadRequest,
-			Message:   fmt.Sprintf("Bad Request Map User: %s", err),
+			Message:   "Token is required in Authorization Header",
 		})
-		fmt.Println(err)
 		return
 	}
 
-	if user.RefreshToken == "" {
-		ctx.JSON(http.StatusBadRequest, utils.ErrorResponse{
-			ErrorCode: http.StatusBadRequest,
-			Message:   "Bad Request Need Refresh Token",
+	user := &models.User{
+		Token: token,
+	}
+
+	if err := user.ValidToken(); err != nil {
+		ctx.JSON(http.StatusUnauthorized, utils.ErrorResponse{
+			ErrorCode: http.StatusUnauthorized,
+			Message:   "Token is no valid",
 		})
 		return
+	}
+	ctx.JSON(http.StatusOK, utils.DefaultResponse{
+		Message: "Authenticated!",
+	})
+}
+
+//AuthByRefreshToken: used into app for get user information
+func AuthByRefreshToken(ctx *gin.Context) {
+	token := ctx.Request.Header.Get("Authorization")
+
+	if token == "" {
+		ctx.JSON(http.StatusBadRequest, utils.ErrorResponse{
+			ErrorCode: http.StatusBadRequest,
+			Message:   "Token is required in Authorization Header",
+		})
+		return
+	}
+
+	user := &models.User{
+		RefreshToken: token,
 	}
 
 	if err := user.ValidRefreshToken(); err != nil {
@@ -156,4 +183,15 @@ func AuthByRefreshToken(ctx *gin.Context) {
 		return
 	}
 
+	if err := user.CreateRefreshToken(); err != nil {
+		ctx.JSON(http.StatusInternalServerError, utils.ErrorResponse{
+			ErrorCode: http.StatusInternalServerError,
+			Message:   fmt.Sprintf("Internal Server Error: %s", err),
+		})
+		return
+	}
+	ctx.JSON(http.StatusOK, utils.DefaultResponse{
+		Data:    user,
+		Message: "Authenticated!",
+	})
 }
