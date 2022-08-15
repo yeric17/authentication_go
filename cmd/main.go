@@ -25,6 +25,7 @@ func main() {
 	router.Static("/images/users", "./public/images/users")
 
 	router.POST("/register/email", handlers.RegisterByEmail)
+	router.POST("/login/email", handlers.LoginByEmail)
 
 	router.Run(":" + port)
 }

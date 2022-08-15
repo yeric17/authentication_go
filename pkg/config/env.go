@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	PORT, HOST, MODE, DB_USER, DB_PASS, DB_HOST, DB_PORT, DB_NAME, DB_DRIVER, CONNECTION_STRING string
+	PORT, HOST, MODE, DB_USER, DB_PASS, DB_HOST, DB_PORT, DB_NAME, DB_DRIVER, JWT_SECRET_KEY, CONNECTION_STRING string
 )
 
 func init() {
@@ -28,6 +28,7 @@ func init() {
 	DB_PORT = os.Getenv("DB_PORT")
 	DB_NAME = os.Getenv("DB_NAME")
 	DB_DRIVER = os.Getenv("DB_DRIVER")
+	JWT_SECRET_KEY = os.Getenv("JWT_SECRET_KEY")
 
 	CONNECTION_STRING = fmt.Sprintf("postgres://%s:%s@%s:%s/%s", DB_USER, DB_PASS, DB_HOST, DB_PORT, DB_NAME)
 

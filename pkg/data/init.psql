@@ -22,7 +22,7 @@ WITH (
 
 CREATE TABLE IF NOT EXISTS Refresh_Tokens (
     r_token_id character varying(38) NOT NULL DEFAULT uuid_generate_v4(),
-    r_token_value character varying(22) NOT NULL UNIQUE,
+    r_token_value character varying(38) NOT NULL DEFAULT uuid_generate_v4(),
     r_token_user_id character varying(38) NOT NULL,
     r_token_status smallint NOT NULL,
     r_token_parent character varying(22),
