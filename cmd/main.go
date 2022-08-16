@@ -28,6 +28,8 @@ func main() {
 	router.POST("/login/email", handlers.LoginByEmail)
 	router.GET("/auth/token", handlers.AuthByToken)
 	router.GET("/auth/refresh-token", handlers.AuthByRefreshToken)
+	router.GET("/auth/google", handlers.GoogleAuth)
+	router.GET("/auth/google/callback", handlers.GoogleCallback)
 
 	router.Run(":" + port)
 }

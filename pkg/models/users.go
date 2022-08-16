@@ -84,7 +84,14 @@ func (u *User) Create(provider string) error {
 
 	u.Password = string(passByte)
 
-	err = db.QueryRow(query, u.UniqueName, u.Name, u.Password, u.Email, u.Avatar, u.Phone, 2, provider).Scan(&u.ID)
+	var status int
+	if provider == "google" {
+		status = 1
+	} else {
+		status = 2
+	}
+
+	err = db.QueryRow(query, u.UniqueName, u.Name, u.Password, u.Email, u.Avatar, u.Phone, status, provider).Scan(&u.ID)
 
 	if err != nil {
 		return fmt.Errorf("error get new user: %s", err)

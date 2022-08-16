@@ -90,18 +90,7 @@ func LoginByEmail(ctx *gin.Context) {
 		return
 	}
 
-	newUser := *user
-	claim := models.UserClaims{
-		DataUser: newUser,
-	}
-
-	claim.Id = user.ID
-	claim.Issuer = "Identifies"
-	claim.ExpiresAt = time.Now().Add(time.Hour * 24).Unix()
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
-
-	tokenString, err := token.SignedString([]byte(config.JWT_SECRET_KEY))
+	tokenString, err := GetTokenByUser(*user)
 
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, utils.ErrorResponse{
@@ -194,4 +183,24 @@ func AuthByRefreshToken(ctx *gin.Context) {
 		Data:    user,
 		Message: "Authenticated!",
 	})
+}
+
+func GetTokenByUser(user models.User) (string, error) {
+	claim := models.UserClaims{
+		DataUser: user,
+	}
+
+	claim.Id = user.ID
+	claim.Issuer = "Identifies"
+	claim.ExpiresAt = time.Now().Add(time.Hour * 24).Unix()
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
+
+	tokenString, err := token.SignedString([]byte(config.JWT_SECRET_KEY))
+
+	if err != nil {
+		fmt.Println(err)
+		return "", err
+	}
+	return tokenString, nil
 }
