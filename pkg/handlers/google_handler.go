@@ -49,8 +49,7 @@ func GoogleCallback(ctx *gin.Context) {
 	state := ctx.Query("state")
 	if state != "randomstate" {
 		ctx.JSON(http.StatusInternalServerError, utils.ErrorResponse{
-			ErrorCode: http.StatusInternalServerError,
-			Message:   "State don't match",
+			Message: "State don't match",
 		})
 		return
 	}
@@ -61,8 +60,7 @@ func GoogleCallback(ctx *gin.Context) {
 
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, utils.ErrorResponse{
-			ErrorCode: http.StatusInternalServerError,
-			Message:   "Code-Token Exchange Failed",
+			Message: "Code-Token Exchange Failed",
 		})
 		return
 	}
@@ -71,8 +69,7 @@ func GoogleCallback(ctx *gin.Context) {
 
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, utils.ErrorResponse{
-			ErrorCode: http.StatusInternalServerError,
-			Message:   "User data fetch Failed",
+			Message: "User data fetch Failed",
 		})
 		return
 	}
@@ -83,8 +80,7 @@ func GoogleCallback(ctx *gin.Context) {
 
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, utils.ErrorResponse{
-			ErrorCode: http.StatusInternalServerError,
-			Message:   "User data fetch Failed",
+			Message: "User data fetch Failed",
 		})
 		return
 	}
@@ -98,8 +94,7 @@ func GoogleCallback(ctx *gin.Context) {
 
 	if user.Email == "" {
 		ctx.JSON(http.StatusUnauthorized, utils.ErrorResponse{
-			ErrorCode: http.StatusUnauthorized,
-			Message:   "Provider has not email for login o register",
+			Message: "Provider has not email for login o register",
 		})
 		fmt.Println("Provider has not email for login o register")
 		return
@@ -112,8 +107,7 @@ func GoogleCallback(ctx *gin.Context) {
 		user.UniqueName = utils.RandomString(5)
 		if err := user.Create("google"); err != nil {
 			ctx.JSON(http.StatusUnauthorized, utils.ErrorResponse{
-				ErrorCode: http.StatusUnauthorized,
-				Message:   "Provider create error",
+				Message: "Provider create error",
 			})
 			fmt.Println(err)
 			return
@@ -125,8 +119,7 @@ func GoogleCallback(ctx *gin.Context) {
 	if err != nil {
 
 		ctx.JSON(http.StatusInternalServerError, utils.ErrorResponse{
-			ErrorCode: http.StatusInternalServerError,
-			Message:   "Can not get Token for user",
+			Message: "Can not get Token for user",
 		})
 		fmt.Println(err)
 		return

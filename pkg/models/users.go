@@ -1,10 +1,10 @@
 package models
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/yeric17/thullo/pkg/data"
@@ -12,26 +12,26 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var (
-	db *sql.DB
-)
+// var (
+// 	db *sql.DB
+// )
 
-func init() {
-	db = data.GetConnection()
-}
+// func init() {
+// 	db = data.GetConnection()
+// }
 
 type User struct {
 	ID           string `json:"id"`
-	UniqueName   string `json:"unique_name"`
-	Name         string `json:"name"`
+	UniqueName   string `json:"unique_name,omitempty"`
+	Name         string `json:"name,omitempty"`
 	Password     string `json:"password,omitempty"`
-	Email        string `json:"email"`
-	Avatar       string `json:"avatar"`
+	Email        string `json:"email,omitempty"`
+	Avatar       string `json:"avatar,omitempty"`
 	Phone        string `json:"phone,omitempty"`
 	Status       int    `json:"status,omitempty"`
 	Provider     string `json:"provider,omitempty"`
 	Token        string `json:"token,omitempty"`
-	RefreshToken string `json:"refresh_token"`
+	RefreshToken string `json:"refresh_token,omitempty"`
 }
 
 type UserClaims struct {
@@ -42,7 +42,7 @@ type UserClaims struct {
 type UserStatus int
 
 const (
-	UserStatusInactive UserStatus = iota
+	UserStatusInactive UserStatus = iota + 1
 	UserStatusActive
 	UserStatusWaitingConfirmation
 )
@@ -91,7 +91,7 @@ func (u *User) Create(provider string) error {
 		status = 2
 	}
 
-	err = db.QueryRow(query, u.UniqueName, u.Name, u.Password, u.Email, u.Avatar, u.Phone, status, provider).Scan(&u.ID)
+	err = data.Connection.QueryRow(query, u.UniqueName, u.Name, u.Password, u.Email, u.Avatar, u.Phone, status, provider).Scan(&u.ID)
 
 	if err != nil {
 		return fmt.Errorf("error get new user: %s", err)
@@ -109,12 +109,12 @@ func (u *User) GetByEmail(withPass bool) error {
 		query = `SELECT user_id, user_unique_name, user_name, user_password, user_email, user_avatar, user_phone, user_status
 		FROM Users
 		WHERE user_email = $1`
-		err = db.QueryRow(query, u.Email).Scan(&u.ID, &u.UniqueName, &u.Name, &u.Password, &u.Email, &u.Avatar, &u.Phone, &u.Status)
+		err = data.Connection.QueryRow(query, u.Email).Scan(&u.ID, &u.UniqueName, &u.Name, &u.Password, &u.Email, &u.Avatar, &u.Phone, &u.Status)
 	} else {
 		query = `SELECT user_id, user_unique_name, user_name, user_email, user_avatar, user_phone, user_status
 		FROM Users
 		WHERE user_email = $1`
-		err = db.QueryRow(query, u.Email).Scan(&u.ID, &u.UniqueName, &u.Name, &u.Email, &u.Avatar, &u.Phone, &u.Status)
+		err = data.Connection.QueryRow(query, u.Email).Scan(&u.ID, &u.UniqueName, &u.Name, &u.Email, &u.Avatar, &u.Phone, &u.Status)
 	}
 
 	if err != nil {
@@ -130,7 +130,7 @@ func (u *User) GetByID() error {
 	FROM Users
 	WHERE user_id = $1`
 
-	err := db.QueryRow(query, u.ID).Scan(&u.ID, &u.UniqueName, &u.Name, &u.Email, &u.Avatar, &u.Phone, &u.Status)
+	err := data.Connection.QueryRow(query, u.ID).Scan(&u.ID, &u.UniqueName, &u.Name, &u.Email, &u.Avatar, &u.Phone, &u.Status)
 
 	if err != nil {
 		return fmt.Errorf("error getting user: %s", err)
@@ -139,10 +139,73 @@ func (u *User) GetByID() error {
 	return nil
 }
 
+func (u *User) Update() error {
+	var args []interface{}
+	var instructions []string
+
+	if u.ID == "" {
+		return utils.ErrorIdRequired
+	}
+	if u.Name != "" {
+		instructions = append(instructions, fmt.Sprintf("user_name = $%d", len(args)+1))
+		args = append(args, u.Name)
+	}
+
+	if u.UniqueName != "" {
+		instructions = append(instructions, fmt.Sprintf("user_unique_name = $%d", len(args)+1))
+		args = append(args, u.UniqueName)
+	}
+
+	if u.Email != "" {
+		instructions = append(instructions, fmt.Sprintf("user_email = $%d", len(args)+1))
+		args = append(args, u.Email)
+	}
+
+	if u.Password != "" {
+		instructions = append(instructions, fmt.Sprintf("user_password = $%d", len(args)+1))
+		passByte, err := bcrypt.GenerateFromPassword([]byte(u.Password), 14)
+
+		if err != nil {
+			return fmt.Errorf("error updating user: %s", err)
+		}
+		u.Password = string(passByte)
+		args = append(args, u.Password)
+	}
+
+	if u.Status != 0 {
+		instructions = append(instructions, fmt.Sprintf("user_status = $%d", len(args)+1))
+		args = append(args, u.Status)
+	}
+
+	if u.Avatar != "" {
+		instructions = append(instructions, fmt.Sprintf("user_avatar = $%d", len(args)+1))
+		args = append(args, u.Avatar)
+	}
+
+	if u.Phone != "" {
+		instructions = append(instructions, fmt.Sprintf("user_phone = $%d", len(args)+1))
+		args = append(args, u.Phone)
+	}
+
+	args = append(args, u.ID)
+
+	query := fmt.Sprintf(`UPDATE Users SET %s WHERE user_id = $%d`, strings.Join(instructions[:], ", "), len(args))
+
+	_, err := data.Connection.Exec(query, args...)
+
+	if err != nil {
+		return fmt.Errorf("error updating user: %s", err)
+	}
+
+	u.Password = ""
+
+	return nil
+}
+
 func (u *User) CreateRefreshToken() error {
 	query := `UPDATE Refresh_Tokens SET r_token_status = 0 WHERE r_token_user_id = $1`
 
-	_, err1 := db.Exec(query, u.ID)
+	_, err1 := data.Connection.Exec(query, u.ID)
 
 	if err1 != nil {
 		return fmt.Errorf("can not disbled refresh token: %s", err1)
@@ -152,8 +215,7 @@ func (u *User) CreateRefreshToken() error {
 	VALUES ($1, $2) 
 	RETURNING r_token_value`
 
-	fmt.Println(u.ID)
-	err := db.QueryRow(queryInsert, u.ID, 1).Scan(&u.RefreshToken)
+	err := data.Connection.QueryRow(queryInsert, u.ID, 1).Scan(&u.RefreshToken)
 
 	if err != nil {
 		return fmt.Errorf("can not create refresh token: %s", err)
@@ -164,7 +226,7 @@ func (u *User) CreateRefreshToken() error {
 func (u *User) ValidRefreshToken() error {
 	query := `SELECT r_token_status, r_token_user_id FROM Refresh_Tokens WHERE r_token_value = $1`
 
-	err := db.QueryRow(query, u.RefreshToken).Scan(&u.Status, &u.ID)
+	err := data.Connection.QueryRow(query, u.RefreshToken).Scan(&u.Status, &u.ID)
 
 	if err != nil {
 		return fmt.Errorf("can not refresh token: %s", err)

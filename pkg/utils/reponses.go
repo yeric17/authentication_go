@@ -1,8 +1,7 @@
 package utils
 
 type ErrorResponse struct {
-	ErrorCode uint   `json:"error_code"`
-	Message   string `json:"message"`
+	Message string `json:"message"`
 }
 
 type DefaultResponse struct {
